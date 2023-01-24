@@ -1,0 +1,82 @@
+CREATE TABLE ClasesDeDias (
+  id_clase_de_dia            INT           NOT NULL    IDENTITY    PRIMARY KEY,
+  des_clase_de_dia           INT           NOT NULL,
+);
+
+INSERT INTO ClasesDeDias (des_clase_de_dia) VALUES('Laborable');
+INSERT INTO ClasesDeDias (des_clase_de_dia) VALUES('Sabado');
+INSERT INTO ClasesDeDias (des_clase_de_dia) VALUES('Domingo o Feriado');
+
+
+CREATE TABLE Periodos (
+  id_periodo           INT           NOT NULL    IDENTITY    PRIMARY KEY,
+  des_periodo          INT           NOT NULL,
+);
+
+INSERT INTO Periodos  (des_periodo) VALUES('de Punta');
+INSERT INTO Periodos  (des_periodo) VALUES('Intermedio');
+INSERT INTO Periodos  (des_periodo) VALUES('de Valle');
+
+CREATE TABLE Horarios (
+  id_horario            INT           NOT NULL    IDENTITY    PRIMARY KEY,
+  hora_entrada          INT           NOT NULL,
+  hora_salida           INT           NOT NULL,
+  id_clase_de_dia       INT			  NOT NULL FOREIGN KEY REFERENCES ClasesDeDias(id_clase_de_dia),
+  id_periodo            INT			  NOT NULL FOREIGN KEY REFERENCES Periodos(id_periodo)
+);
+
+
+--Periodo de punta clase laboral
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(10,16,5,1);
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(18,22,5,1);
+
+--Periodo intermedio clase laboral
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(5,10,5,2);
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(16,18,5,2);
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(22,24,5,2);
+
+--Periodo de valle clase laboral
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(0,5,5,3);
+
+
+
+--Periodo de punta clase sabado
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(12,13,6,1);
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(19,20,6,1);
+
+--Periodo intermedio clase sabado
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(6,12,6,2);
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(13,19,6,2);
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(20,24,6,2);
+
+--Periodo de valle clase sabado
+INSERT INTO Horarios   (hora_entrada,hora_salida,id_clase_de_dia,id_periodo) VALUES(0,6,6,3);
+
+CREATE OR ALTER VIEW TotalDeHoras AS
+WITH tmp as (
+
+SELECT (select t2.des_clase_de_dia from ClasesDeDias t2 where t2.id_clase_de_dia = t1.id_clase_de_dia ) as "Clase de dia",
+	   (select CONCAT('Periodo ',t3.des_periodo) from Periodos t3 where t3.id_periodo = t1.id_periodo ) as "Periodo",
+	   (t1.hora_salida - t1.hora_entrada) as "Horas",
+	   t1.hora_entrada as "Hora de entrada",
+	   t1.hora_salida  as "Hora de salida",
+	   t1.id_clase_de_dia,
+	   t1.id_periodo
+FROM Horarios t1
+group by t1.id_clase_de_dia, t1.id_periodo,t1.hora_salida, t1.hora_entrada,t1.id_clase_de_dia,t1.id_periodo)
+
+SELECT [Clase de dia],
+	   Periodo,
+	   Sum(Horas) as Horas,
+	   id_clase_de_dia,
+	   id_periodo
+FROM tmp
+group by [Clase de dia],Periodo,id_clase_de_dia,id_periodo;
+--order by id_clase_de_dia,id_periodo;
+
+SELECT [Clase de dia],
+	   Periodo,
+	   Horas
+FROM TotalDeHoras
+order by id_clase_de_dia,id_periodo;
+
